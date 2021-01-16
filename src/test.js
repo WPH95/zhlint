@@ -192,14 +192,48 @@ SET @a = 'a', @b = 'b', @c = 'c';
 
 // startFullTest()
 
-test("-> to signal", function(t) {
-  t.test("should throw error", st => {
-    st.plan(1);
-    let output = process("快车道 -> 二仙桥 <-> 成华大道");
+test("括号", function(t) {
+  // t.test("ZH403should throw error", st => {
+  //   st.plan(2);
+  //   let output = process("这是一个测试句子（啥这是一个测试句子？");
+  //   msgTest(st, output.messages[0], "miss right parenthesis", "ZH403")
+  // });
+  //
+  // t.test("ZH403should throw error", st => {
+  //   st.plan(2);
+  //   let output = process("这是一个测试句子（这（啥这是一个测试句子？");
+  //   msgTest(st, output.messages[0], "miss right parenthesis", "ZH403")
+  // });
+  //
+  // t.test("ZH403should throw error", st => {
+  //   st.plan(2);
+  //   let output = process("这是一个测试句子啥这是一个测试）句子？");
+  //   msgTest(st, output.messages[0], "miss left parenthesis", "ZH403")
+  // });
 
+  // t.test("424 中文括号内容使用半角括号", st => {
+  //   st.plan(4);
+  //   let output = process("这是一个测试句 (子啥这是一个测试) 句子？");
+  //   msgTest(st, output.messages[0], "in cn sen, left parenthesis should full-width", "ZH424")
+  //   msgTest(st, output.messages[1], "in cn sen, right parenthesis should full-width", "ZH424")
+  // });
+
+  t.test("423 全角括号前有空格", st => {
+    st.plan(6);
+    let output = process("这是一个测试句 （子啥这是一个测试） 句子？");
+    msgTest(st, output.messages[0], "before left parenthesis have whitespace", "ZH423")
+    msgTest(st, output.messages[1], "after right parenthesis have whitespace", "ZH423")
+    output = process("（子啥这是一个测试） 句子？");
+    msgTest(st, output.messages[0], "after right parenthesis have whitespace", "ZH423")
   });
+
 })
 
+
+function msgTest(st, msg, exceptMsg, exceptID){
+  st.deepEqual(msg.message, exceptMsg)
+  st.deepEqual(msg.ruleId, exceptID)
+}
 
 
 // test("test", function(t) {

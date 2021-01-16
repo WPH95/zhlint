@@ -3,7 +3,7 @@ import visit from "unist-util-visit";
 import {Punctuation, SentenceNode} from "../../parser/type";
 import {isLeftParenthesis, isRightParenthesis, isSlash} from "../../parser/parser_node";
 import {isStartOrEndInArray} from "./BASE";
-import {isPunctuation, isWhiteSpace} from "nlcst-types";
+import {isPunctuation, isWhiteSpace, isWord} from "nlcst-types";
 
 
 //括号里全为英文时建议使用半角括号，并在括号前后各空一个半角空格，括号和括号内的英文之间不需要空格。
@@ -18,8 +18,12 @@ export const ZH420_423 = rule(":ZH420", (tree, file, options) => {
   visit(tree, "SentenceNode", (_sen: any) => {
     const sen:SentenceNode = _sen;
     let left;
+    let left_i;
     let cache = []
+    let i = -1;
     for (let child of sen.children) {
+
+      i+=1;
       if (isPunctuation(child)){
         if (isLeftParenthesis(child)){
           if (left){
@@ -27,6 +31,7 @@ export const ZH420_423 = rule(":ZH420", (tree, file, options) => {
             continue
           }
           left = child
+          left_i = i
         }
 
         if (isRightParenthesis(child)){
@@ -34,7 +39,31 @@ export const ZH420_423 = rule(":ZH420", (tree, file, options) => {
             file.message("miss left parenthesis", child.position.start, "ZH403")
             continue
           }
-          parenthesisCheck(left, child, cache, file)
+
+          // DEEP CHECK
+          const isCN = cache.filter(n=>isWord(n)).filter(n=>n.isFull).length>0
+          const hadStartSpace = left_i!==0 && isWhiteSpace(sen.children[left_i-1])
+          const hadEndSpace = i+1!==sen.children.length-1 && isWhiteSpace(sen.children[i+1])
+
+
+          if (isCN){
+            if (!left.isFull){
+              file.message("in cn sen, left parenthesis should full-width", left.position.start, "ZH424")
+            }
+            if (!child.isFull){
+              file.message("in cn sen, right parenthesis should full-width", child.position.start, "ZH424")
+            }
+
+            if (hadStartSpace){
+              file.message("before left parenthesis have whitespace", left.position.start, "ZH423")
+            }
+            if (hadEndSpace) {
+              file.message("after right parenthesis have whitespace", child.position.start, "ZH423")
+            }
+          }else {
+
+
+          }
 
           // clear
           cache = []
@@ -50,11 +79,6 @@ export const ZH420_423 = rule(":ZH420", (tree, file, options) => {
     if (left){
       file.message("miss right parenthesis", sen.position.end, "ZH403")
     }
-
   });
 });
 
-
-const  parenthesisCheck = (left, right, children, file)=>{
-
-}

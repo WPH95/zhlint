@@ -16,6 +16,7 @@ import {ZH418} from "./rule/zh/ZH418";
 import {Inspect} from "./rule/zh/inspect";
 import {ZH414} from "./rule/zh/ZH414";
 import {ZH410} from "./rule/zh/ZH410";
+import {ZH420_423} from "./rule/zh/ZH420_423";
 var stringify = require('remark-stringify')
 var report = require('vfile-reporter')
 var english = require('retext-english')
@@ -34,6 +35,8 @@ const remark_zh =remark()
       .use(ZH417, [2])
       .use(ZH418, [2])
       .use(ZH410)
+      .use(ZH420_423)
+
 
   ).use(stringify)
 
