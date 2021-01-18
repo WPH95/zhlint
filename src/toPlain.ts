@@ -3,6 +3,8 @@ const vfile = require("to-vfile");
 const toNlcst = require("mdast-util-to-nlcst");
 const inspect = require("unist-util-inspect");
 const Chinese = require("./parser/parser");
+
+const ChineseParser = require("./parser/parse-chinese");
 const remark = require("remark");
 const gfm = require("remark-gfm");
 const frontmatter = require("remark-frontmatter");
@@ -19,7 +21,10 @@ import {ZH410} from "./rule/zh/ZH410";
 import {ZH420_423} from "./rule/zh/ZH420_423";
 import {ZH425} from "./rule/zh/ZH425";
 import visit from "unist-util-visit";
-import {node2String} from "./parser/parse-chinese";
+import {doc} from "prettier";
+import printDocToString = doc.printer.printDocToString;
+import join = doc.builders.join;
+import {log} from "util";
 var stringify = require('remark-stringify')
 var report = require('vfile-reporter')
 var english = require('retext-english')
@@ -40,26 +45,10 @@ const remark_zh =remark()
       .use(ZH410)
       .use(ZH420_423)
       .use(ZH425)
-      .use(count)
+
+
+
   ).use(stringify)
-
-const unicodeLength = require('unicode-length')
-var toString = require("nlcst-to-string");
-
-
-
-function count() {
-  return counter;
-  function counter(tree, file) {
-    file.counts = {};
-    file.counts.char = unicodeLength.get(toString(tree))
-    visit(tree, "SentenceNode",(node)=>{
-      file.counts.sen = (file.counts.sen || 0) + 1;
-    });
-  }
-}
-
-
 
 module.exports = remark_zh
 // const file = vfile.readSync(
@@ -92,57 +81,69 @@ module.exports = remark_zh
 
 
 const total = []
-const files = {
-  counts : []
-}
+var nodeToStr = require("nlcst-to-string");
+var English = require('parse-english')
+var fs = require('fs')
 
 function processFile(path){
-   remark_zh.process(vfile.readSync(path), function(err, file) {
-     total.push(...(file?.messages || []))
-    console.error(report(err || file))
-     files.counts.push(file.counts)
-  });
-}
 
-var glob = require("glob")
+  const file =vfile.readSync(path)
+  const remark_zh =remark()
+    .use(gfm)
+    .use(frontmatter, ["yaml", "toml"])
+    .parse(file)
+  var mdast = remark().parse(file)
 
-// glob.sync("/Users/wph95/hackathon/2021/base_docs/k8s-website/content/zh/**/*.md", {}).map(file=>processFile(file))
-// glob.sync("/Users/wph95/hackathon/2021/base_docs/docs-cn/**/*.md", {}).map(file=>processFile(file))
-// glob.sync("/Users/wph95/hackathon/2021/base_docs/docs-cn/whats-new-in-tidb-4.0.md", {}).map(file=>processFile(file))
-// glob.sync("/Users/wph95/hackathon/2021/base_docs/qingcloud-docs-master/content/**/*.md", {}).map(file=>processFile(file))
-glob.sync("/Users/wph95/hackathon/2021/base_docs/flink/**/*.zh.md", {}).map(file=>processFile(file))
+  // const writer = console.log
+  let tmp = path.split("/")
+  tmp[tmp.indexOf("docs")] = "docs-plain"
+  // tmp[tmp.indexOf("docs-cn")] = "docs-cn-plain"
+  var logger = fs.createWriteStream(tmp.join("/")+".txt")
+  console.log(tmp.join("/")+".txt")
+  const writeln = (l)=>logger.write(l+"\n")
+  for (let node of mdast.children) {
+    writeln(`${node.position.start.line}-${node.position.end.line}, ${node.type}, ${node.depth||""}`)
+    if (node.type==="list"){
+      for (let item of node.children) {
+        writeln(nodeToStr(toNlcst(item, file, ChineseParser)))
+      }
+    }else{
+      writeln(nodeToStr(toNlcst(node, file, ChineseParser)))
+    }
+    writeln("---")
 
-console.log(`total: ${total.length}`)
-let rules = {}
-
-let fatal= {};
-total.map(msg=>{
-  if (rules[msg.ruleId]){
-    rules[msg.ruleId].push(msg)
-  }else {
-    rules[msg.ruleId] = []
   }
+  logger.close()
 
-  fatal[msg.fatal] = (fatal[msg.fatal] || 0)+1
-
-})
-
-for (let rulesKey in rules) {
-  console.log(rulesKey, rules[rulesKey].length)
 }
 
-for (let v in fatal){
-  console.log(v, fatal[v])
-}
-
-
-let sen = 0;
-let char = 0;
-for (let count of files.counts) {
-  char += count.char || 0
-  sen += count.sen || 0
-}
-
-console.log(`total sen:${sen}, char:${char}`)
 
 // processFile("/Users/wph95/hackathon/2021/base_docs/docs-cn/whats-new-in-tidb-4.0.md")
+processFile("/Users/wph95/hackathon/2021/base_docs/docs/whats-new-in-tidb-4.0.md")
+
+
+
+
+// var glob = require("glob")
+//
+// glob.sync("/Users/wph95/hackathon/2021/base_docs/docs/*.md", {}).map(file=>processFile(file))
+// console.log(`total: ${total.length}`)
+// let rules = {}
+//
+// total.map(msg=>{
+//   if (rules[msg.ruleId]){
+//     rules[msg.ruleId].push(msg)
+//   }else {
+//     rules[msg.ruleId] = []
+//   }
+// })
+//
+// for (let rulesKey in rules) {
+//   console.log(rulesKey, rules[rulesKey].length)
+//
+// }
+
+
+// processFile("/Users/wph95/hackathon/2021/base_docs/docs/views.md")
+
+

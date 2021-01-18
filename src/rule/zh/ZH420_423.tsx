@@ -4,6 +4,7 @@ import {Punctuation, SentenceNode} from "../../parser/type";
 import {isLeftParenthesis, isRightParenthesis, isSlash} from "../../parser/parser_node";
 import {isStartOrEndInArray} from "./BASE";
 import {isPunctuation, isWhiteSpace, isWord} from "nlcst-types";
+import {ZHError} from "./error"
 
 
 //括号里全为英文时建议使用半角括号，并在括号前后各空一个半角空格，括号和括号内的英文之间不需要空格。
@@ -32,6 +33,7 @@ export const ZH420_423 = rule(":ZH420", (tree, file, options) => {
           }
           left = child
           left_i = i
+          continue
         }
 
         if (isRightParenthesis(child)){
@@ -61,6 +63,28 @@ export const ZH420_423 = rule(":ZH420", (tree, file, options) => {
               file.message("after right parenthesis have whitespace", child.position.start, "ZH423")
             }
           }else {
+            if (left.isFull){
+              file.message(ZHError.ZH420L, left.position.start, "ZH420")
+            }
+            if (child.isFull){
+              file.message(ZHError.ZH420R, child.position.start, "ZH420")
+            }
+
+            if (left_i!==0 && !hadStartSpace){
+              file.message(ZHError.ZH421L, left.position.start, "ZH421")
+            }
+            if (i!== (sen.children.length-1) && !hadEndSpace) {
+              file.message(ZHError.ZH421R, child.position.start, "ZH421")
+            }
+
+            if (cache.length>0){
+              if (isWhiteSpace(cache[0])){
+                file.message(ZHError.ZH422L, child.position.start, "ZH422")
+              }
+              if (isWhiteSpace(cache[cache.length-1])){
+                file.message(ZHError.ZH422R, child.position.start, "ZH422")
+              }
+            }
 
 
           }

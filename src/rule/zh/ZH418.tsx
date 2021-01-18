@@ -21,6 +21,9 @@ export const ZH418 = rule(":ZH418", (tree, file, options) => {
     }
     for (const node of sentence.children) {
       if (isPunctuation(node) && !node.isCN){
+        if (node.ptype===PUNCTUATION.UNKNOWN){
+          continue
+        }
         if (node.ptype === PUNCTUATION.ELLIPSIS){
           file.message(`shouldn't use en ellipsis:'${node.value}' in cn sentence`, node.position.start, "ZH412");
         }else {

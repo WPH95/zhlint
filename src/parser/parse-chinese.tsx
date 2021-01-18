@@ -9,9 +9,11 @@ import {isStartOrEndInArray} from "../rule/zh/BASE";
 
 var Parser = require("parse-english");
 var toString = require("nlcst-to-string");
-const node2String = toString;
+export const node2String = toString;
 var modifyChildren = require("unist-util-modify-children");
+let root_file;
 function ParseChinese(doc, file) {
+  root_file = file;
   if (!(this instanceof ParseChinese)) {
     // @ts-ignore
     return new ParseChinese(doc, file);
@@ -75,8 +77,11 @@ function isShortCode(sen) {
   }
   return false;
 }
+const unicodeLength = require('unicode-length')
 
 function addSentenceMeta(tree, index, parent) {
+
+
   visit(tree, NODE_TYPE.Paragraph, (parent: any) => {
     let children = [];
     for (let node of parent.children) {

@@ -80,3 +80,15 @@ const visitChildren = (tree, match, fn) => {
 export const isStartOrEndInArray = (i, children) => {
   return i === 0 || children.length - 1 === i;
 };
+
+
+export const getNear = (i, children)=>{
+  let last = i!==0?children[i-1]:undefined
+  let next = (i+1)!==children.length?children[i+1]:undefined
+
+  return {
+    last,
+    next
+  }
+
+}

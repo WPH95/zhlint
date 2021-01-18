@@ -48,6 +48,7 @@
     "tape": "^5.1.1",
     "to-vfile": "^6.1.0",
     "ts-node": "^9.1.1",
+    "unicode-length": "^2.0.2",
     "unified-args": "^8.1.0",
     "unified-lint-rule": "^1.0.6",
     "unified-stream": "^1.0.6",
